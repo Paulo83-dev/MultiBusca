@@ -169,7 +169,8 @@
     </div>
 
     <script src="js/auth.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-client.js"></script>
     
     <script>
@@ -207,17 +208,19 @@
             }
             
             // Código para login e registro usando Supabase
-            const loginForm = document.getElementById('login-form');
-            const registerForm = document.getElementById('register-form');
-            const messageDiv = document.getElementById('message');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const alertMessage = document.getElementById('alertMessage');
+            const registerAlertMessage = document.getElementById('registerAlertMessage');
             
             // Função para mostrar mensagens
-            function showMessage(message, isError = false) {
-                messageDiv.textContent = message;
-                messageDiv.className = isError ? 'error-message' : 'success-message';
-                messageDiv.style.display = 'block';
+            function showMessage(element, message, isError = false) {
+                if (!element) return;
+                element.textContent = message;
+                element.className = isError ? 'alert alert-error' : 'alert alert-success';
+                element.style.display = 'block';
                 setTimeout(() => {
-                    messageDiv.style.display = 'none';
+                    element.style.display = 'none';
                 }, 5000);
             }
             
@@ -226,15 +229,19 @@
                 loginForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
                     
-                    const email = document.getElementById('login-email').value;
-                    const password = document.getElementById('login-password').value;
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
                     
                     try {
+                        if (!window.supabaseAuth) {
+                            throw new Error('Supabase não está inicializado. Recarregue a página e tente novamente.');
+                        }
+                        
                         const { data, error } = await window.supabaseAuth.signIn(email, password);
                         
                         if (error) throw error;
                         
-                        showMessage('Login realizado com sucesso! Redirecionando...');
+                        showMessage(alertMessage, 'Login realizado com sucesso! Redirecionando...');
                         localStorage.setItem('isLoggedIn', 'true');
                         
                         // Redirecionar após login bem-sucedido
@@ -243,7 +250,7 @@
                         }, 1500);
                         
                     } catch (error) {
-                        showMessage(`Erro ao fazer login: ${error.message}`, true);
+                        showMessage(alertMessage, `Erro ao fazer login: ${error.message}`, true);
                     }
                 });
             }
@@ -253,38 +260,70 @@
                 registerForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
                     
-                    const name = document.getElementById('register-name').value;
-                    const email = document.getElementById('register-email').value;
-                    const password = document.getElementById('register-password').value;
-                    const confirmPassword = document.getElementById('register-confirm-password').value;
+                    const name = document.getElementById('registerName').value;
+                    const email = document.getElementById('registerEmail').value;
+                    const password = document.getElementById('registerPassword').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
                     
                     if (password !== confirmPassword) {
-                        showMessage('As senhas não coincidem', true);
+                        showMessage(registerAlertMessage, 'As senhas não coincidem', true);
                         return;
                     }
                     
                     try {
-                        const { user, error } = await window.supabaseAuth.signUp(name, email, password);
+                        if (!window.supabaseAuth) {
+                            throw new Error('Supabase não está inicializado. Recarregue a página e tente novamente.');
+                        }
                         
-                        if (error) throw error;
+                        const result = await window.supabaseAuth.signUp(name, email, password);
                         
-                        showMessage('Registro realizado com sucesso! Você já pode fazer login.');
+                        if (result.error) throw result.error;
+                        
+                        showMessage(registerAlertMessage, 'Registro realizado com sucesso! Você já pode fazer login.');
                         
                         // Limpar formulário
                         registerForm.reset();
                         
-                        // Mudar para a aba de login
-                        document.querySelector('.tab-link[data-tab="login"]').click();
+                        // Mudar para a aba de login após alguns segundos
+                        setTimeout(() => {
+                            document.getElementById('loginContainer').style.display = 'block';
+                            document.getElementById('registerContainer').style.display = 'none';
+                        }, 2000);
                         
                     } catch (error) {
-                        showMessage(`Erro ao registrar: ${error.message}`, true);
+                        showMessage(registerAlertMessage, `Erro ao registrar: ${error.message}`, true);
                     }
+                });
+            }
+            
+            // Alternar entre login e registro
+            const toggleRegister = document.getElementById('toggleRegister');
+            const toggleLogin = document.getElementById('toggleLogin');
+            
+            if (toggleRegister) {
+                toggleRegister.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.getElementById('loginContainer').style.display = 'none';
+                    document.getElementById('registerContainer').style.display = 'block';
+                });
+            }
+            
+            if (toggleLogin) {
+                toggleLogin.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.getElementById('registerContainer').style.display = 'none';
+                    document.getElementById('loginContainer').style.display = 'block';
                 });
             }
             
             // Verificar se o usuário já está logado
             async function checkLoggedInStatus() {
                 try {
+                    if (!window.supabaseAuth) {
+                        console.error('Supabase não está inicializado.');
+                        return;
+                    }
+                    
                     const user = await window.supabaseAuth.getCurrentUser();
                     
                     if (user) {
@@ -297,7 +336,7 @@
             }
             
             // Verificar status de login ao carregar a página
-            checkLoggedInStatus();
+            setTimeout(checkLoggedInStatus, 1000); // Dar tempo para o Supabase inicializar
         });
     </script>
 </body>

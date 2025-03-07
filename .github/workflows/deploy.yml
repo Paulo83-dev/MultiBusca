@@ -1,0 +1,35 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # ou master, dependendo do nome do seu branch principal
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: |
+          # Se você tiver um script de build, descomente a linha abaixo
+          # npm run build
+          echo "Preparando arquivos para implantação..."
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@4.1.4
+        with:
+          branch: gh-pages  # O branch onde o site será publicado
+          folder: .         # A pasta que contém os arquivos a serem publicados
+          # Se você tiver uma pasta de build, substitua '.' pela pasta (ex: 'dist' ou 'build')
+          clean: true       # Limpa arquivos existentes no branch gh-pages 

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - MetaPreço</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .login-container {
+            max-width: 500px;
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: #4285f4;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.25);
+        }
+
+        .btn-login {
+            background-color: #4285f4;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+
+        .btn-login:hover {
+            background-color: #3367d6;
+        }
+
+        .toggle-form {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .toggle-form a {
+            color: #4285f4;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .alert-error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>MetaPreço</h1>
+            <nav class="nav-links">
+                <a href="index.html" class="nav-link"><i class="fas fa-home"></i> Início</a>
+                <a href="busca.html" class="nav-link"><i class="fas fa-search"></i> Nova Pesquisa</a>
+                <a href="historico.html" class="nav-link"><i class="fas fa-history"></i> Histórico</a>
+                <a href="login.html" class="nav-link auth-link login-link active"><i class="fas fa-sign-in-alt"></i> Login</a>
+            </nav>
+        </header>
+
+        <main>
+            <div class="login-container" id="loginContainer">
+                <h2>Login</h2>
+                <div id="alertMessage" class="alert"></div>
+                
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Senha</label>
+                        <input type="password" id="password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn-login">Entrar</button>
+                </form>
+
+                <div class="toggle-form">
+                    <p>Ainda não tem uma conta? <a href="#" id="toggleRegister">Cadastre-se</a></p>
+                </div>
+            </div>
+
+            <div class="login-container" id="registerContainer" style="display: none;">
+                <h2>Cadastro</h2>
+                <div id="registerAlertMessage" class="alert"></div>
+                
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="registerName">Nome</label>
+                        <input type="text" id="registerName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Senha</label>
+                        <input type="password" id="registerPassword" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirmar Senha</label>
+                        <input type="password" id="confirmPassword" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn-login">Cadastrar</button>
+                </form>
+
+                <div class="toggle-form">
+                    <p>Já tem uma conta? <a href="#" id="toggleLogin">Fazer Login</a></p>
+                </div>
+            </div>
+
+            <!-- Server Status Alert -->
+            <div id="serverStatus" class="server-status-alert" style="display: none;">
+                <div class="server-status-content">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="serverStatusMessage">O servidor pode estar iniciando. Isso pode levar até 50 segundos na primeira requisição.</span>
+                    <div class="loading-timer">
+                        Tempo de espera: <span id="loadingTime">0</span> segundos
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-client.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificar se há parâmetro register na URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const showRegister = urlParams.get('register');
+            
+            if (showRegister === 'true') {
+                // Mostrar formulário de registro
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('registerContainer').style.display = 'block';
+            }
+            
+            // Verificar se o usuário já está autenticado
+            if (window.authUtils && typeof window.authUtils.isAuthenticated === 'function') {
+                const isAuthenticated = window.authUtils.isAuthenticated();
+                
+                if (isAuthenticated) {
+                    // Usuário já está autenticado, mostrar mensagem e redirecionar
+                    const alertMessage = document.getElementById('alertMessage');
+                    if (alertMessage) {
+                        const user = window.authUtils.getCurrentUser();
+                        const userName = user ? user.name : 'Usuário';
+                        
+                        alertMessage.textContent = `Você já está logado como ${userName}. Redirecionando...`;
+                        alertMessage.style.display = 'block';
+                        alertMessage.className = 'alert alert-success';
+                        
+                        setTimeout(() => {
+                            window.location.href = 'busca.html';
+                        }, 1500);
+                    }
+                }
+            }
+            
+            // Código para login e registro usando Supabase
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const messageDiv = document.getElementById('message');
+            
+            // Função para mostrar mensagens
+            function showMessage(message, isError = false) {
+                messageDiv.textContent = message;
+                messageDiv.className = isError ? 'error-message' : 'success-message';
+                messageDiv.style.display = 'block';
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 5000);
+            }
+            
+            // Login
+            if (loginForm) {
+                loginForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const email = document.getElementById('login-email').value;
+                    const password = document.getElementById('login-password').value;
+                    
+                    try {
+                        const { data, error } = await window.supabaseAuth.signIn(email, password);
+                        
+                        if (error) throw error;
+                        
+                        showMessage('Login realizado com sucesso! Redirecionando...');
+                        localStorage.setItem('isLoggedIn', 'true');
+                        
+                        // Redirecionar após login bem-sucedido
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1500);
+                        
+                    } catch (error) {
+                        showMessage(`Erro ao fazer login: ${error.message}`, true);
+                    }
+                });
+            }
+            
+            // Registro
+            if (registerForm) {
+                registerForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const name = document.getElementById('register-name').value;
+                    const email = document.getElementById('register-email').value;
+                    const password = document.getElementById('register-password').value;
+                    const confirmPassword = document.getElementById('register-confirm-password').value;
+                    
+                    if (password !== confirmPassword) {
+                        showMessage('As senhas não coincidem', true);
+                        return;
+                    }
+                    
+                    try {
+                        const { user, error } = await window.supabaseAuth.signUp(name, email, password);
+                        
+                        if (error) throw error;
+                        
+                        showMessage('Registro realizado com sucesso! Você já pode fazer login.');
+                        
+                        // Limpar formulário
+                        registerForm.reset();
+                        
+                        // Mudar para a aba de login
+                        document.querySelector('.tab-link[data-tab="login"]').click();
+                        
+                    } catch (error) {
+                        showMessage(`Erro ao registrar: ${error.message}`, true);
+                    }
+                });
+            }
+            
+            // Verificar se o usuário já está logado
+            async function checkLoggedInStatus() {
+                try {
+                    const user = await window.supabaseAuth.getCurrentUser();
+                    
+                    if (user) {
+                        // Usuário já está logado, redirecionar para a página principal
+                        window.location.href = 'index.html';
+                    }
+                } catch (error) {
+                    console.error('Erro ao verificar status de login:', error);
+                }
+            }
+            
+            // Verificar status de login ao carregar a página
+            checkLoggedInStatus();
+        });
+    </script>
+</body>
+</html> 

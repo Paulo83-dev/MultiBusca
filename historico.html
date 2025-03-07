@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Pesquisas - MetaPreço</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+    <meta name="description" content="Histórico de pesquisas realizadas no MetaPreço">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>MetaPreço</h1>
+            <nav class="nav-links">
+                <a href="index.html" class="nav-link"><i class="fas fa-home"></i> Início</a>
+                <a href="busca.html" class="nav-link"><i class="fas fa-search"></i> Nova Pesquisa</a>
+                <a href="historico.html" class="nav-link active"><i class="fas fa-history"></i> Histórico</a>
+                <a href="login.html" class="nav-link auth-link login-link"><i class="fas fa-sign-in-alt"></i> Login</a>
+                <a href="#" class="nav-link auth-link logout-link" style="display: none;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <span class="nav-link auth-link user-info" style="display: none;"><i class="fas fa-user"></i> <span class="username">Usuário</span></span>
+            </nav>
+        </header>
+        
+        <div class="alert alert-info" id="server-info">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>Aviso:</strong> Este aplicativo utiliza um servidor gratuito do Render que pode hibernar após períodos de inatividade.
+                <p class="small">Se o carregamento do histórico demorar, aguarde alguns minutos para o servidor iniciar.</p>
+            </div>
+            <button class="close-alert" onclick="document.getElementById('server-info').style.display='none'">×</button>
+        </div>
+        
+        <div id="auth-required-message" style="display: none;" class="alert alert-warning">
+            <i class="fas fa-lock"></i>
+            <div>
+                <strong>Acesso Restrito:</strong> Você precisa fazer login para acessar o histórico de pesquisas.
+                <p class="small">Por favor, <a href="login.html">faça login</a> ou <a href="login.html?register=true">crie uma conta</a> para continuar.</p>
+            </div>
+        </div>
+        
+        <div id="historico-content" style="display: none;">
+            <div class="historico-container">
+                <div class="filter-control">
+                    <input type="text" id="filtro-pesquisa" placeholder="Filtrar por termo de pesquisa..." class="filtro-input">
+                    <button id="btn-limpar-filtro" class="btn-secundario">Limpar Filtro</button>
+                </div>
+                
+                <div class="stats-summary">
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-pesquisas">0</div>
+                        <div class="stat-label">Total de Pesquisas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-produtos">0</div>
+                        <div class="stat-label">Produtos Encontrados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="termo-popular">-</div>
+                        <div class="stat-label">Termo Mais Buscado</div>
+                    </div>
+                </div>
+                
+                <div id="historico-loading" class="loading-indicator">
+                    <div class="spinner"></div>
+                    <p>Carregando histórico...</p>
+                </div>
+                
+                <div id="sem-historico" class="sem-dados" style="display: none;">
+                    <p>Você ainda não realizou nenhuma pesquisa.</p>
+                    <a href="busca.html" class="btn-primario">Fazer Primeira Pesquisa</a>
+                </div>
+                
+                <div class="tabela-container">
+                    <table id="historico-dados">
+                        <thead>
+                            <tr>
+                                <th>Termo de Pesquisa</th>
+                                <th>Data</th>
+                                <th>Produtos Encontrados</th>
+                                <th>Fontes</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dados do histórico serão inseridos aqui via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div id="modal-detalhes" class="modal">
+            <div class="modal-content">
+                <span class="fechar-modal">&times;</span>
+                <h2 id="modal-titulo">Detalhes da Pesquisa</h2>
+                
+                <div class="pesquisa-info">
+                    <p><strong>Termo:</strong> <span id="detalhe-termo"></span></p>
+                    <p><strong>Data:</strong> <span id="detalhe-data"></span></p>
+                    <p><strong>Produtos encontrados:</strong> <span id="detalhe-contagem"></span></p>
+                    <p><strong>Fontes:</strong> <span id="detalhe-fontes"></span></p>
+                </div>
+                
+                <h3>Produtos Encontrados</h3>
+                <div class="view-toggle">
+                    <button id="btn-view-grid" class="active"><i class="fas fa-th"></i> Grade</button>
+                    <button id="btn-view-list"><i class="fas fa-list"></i> Lista</button>
+                </div>
+                
+                <div id="produtos-container" class="produtos-container grid-view">
+                    <!-- Produtos serão inseridos aqui via JavaScript -->
+                </div>
+                
+                <div id="produtos-loading" class="loading-indicator">
+                    <div class="spinner"></div>
+                    <p>Carregando produtos...</p>
+                </div>
+                
+                <div id="sem-produtos" class="sem-dados" style="display: none;">
+                    <p>Nenhum produto encontrado para esta pesquisa.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/statistics.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/historico.js"></script>
+    <!-- Supabase Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-client.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Verificar se o usuário está logado
+            try {
+                const user = await window.supabaseAuth.getCurrentUser();
+                
+                if (!user) {
+                    // Redirecionar para a página de login se não estiver logado
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                // Carregar histórico de pesquisas
+                loadSearchHistory();
+            } catch (error) {
+                console.error('Erro ao verificar status de login:', error);
+                window.location.href = 'login.html';
+            }
+            
+            // Função para carregar o histórico de pesquisas
+            async function loadSearchHistory() {
+                try {
+                    const searchHistoryContainer = document.getElementById('search-history-container');
+                    searchHistoryContainer.innerHTML = '<p class="loading">Carregando histórico de pesquisas...</p>';
+                    
+                    const searchHistory = await window.supabaseProducts.getUserSearchHistory();
+                    
+                    if (!searchHistory || searchHistory.length === 0) {
+                        searchHistoryContainer.innerHTML = '<p class="no-results">Nenhuma pesquisa encontrada no histórico.</p>';
+                        return;
+                    }
+                    
+                    // Limpar o container
+                    searchHistoryContainer.innerHTML = '';
+                    
+                    // Criar cards para cada pesquisa
+                    searchHistory.forEach(search => {
+                        const searchDate = new Date(search.timestamp).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        
+                        const sources = [];
+                        if (search.mercado_livre) sources.push('Mercado Livre');
+                        if (search.google_shopping) sources.push('Google Shopping');
+                        
+                        const card = document.createElement('div');
+                        card.className = 'search-card';
+                        card.innerHTML = `
+                            <div class="search-info">
+                                <h3>${search.search_term}</h3>
+                                <p class="search-date">Pesquisado em: ${searchDate}</p>
+                                <p class="search-sources">Fontes: ${sources.join(', ') || 'Nenhuma'}</p>
+                                <p class="search-count">Resultados encontrados: ${search.result_count}</p>
+                            </div>
+                            <div class="search-actions">
+                                <button class="view-results-btn" data-search-id="${search.id}">Ver Resultados</button>
+                                <button class="repeat-search-btn" data-search-term="${search.search_term}">Repetir Pesquisa</button>
+                            </div>
+                        `;
+                        
+                        searchHistoryContainer.appendChild(card);
+                    });
+                    
+                    // Adicionar event listeners para os botões
+                    document.querySelectorAll('.view-results-btn').forEach(button => {
+                        button.addEventListener('click', async function() {
+                            const searchId = this.getAttribute('data-search-id');
+                            viewSearchResults(searchId);
+                        });
+                    });
+                    
+                    document.querySelectorAll('.repeat-search-btn').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const searchTerm = this.getAttribute('data-search-term');
+                            window.location.href = `index.html?q=${encodeURIComponent(searchTerm)}`;
+                        });
+                    });
+                    
+                } catch (error) {
+                    console.error('Erro ao carregar histórico de pesquisas:', error);
+                    const searchHistoryContainer = document.getElementById('search-history-container');
+                    searchHistoryContainer.innerHTML = `<p class="error">Erro ao carregar histórico: ${error.message}</p>`;
+                }
+            }
+            
+            // Função para visualizar os resultados de uma pesquisa
+            async function viewSearchResults(searchId) {
+                try {
+                    const resultsContainer = document.getElementById('results-container');
+                    resultsContainer.innerHTML = '<p class="loading">Carregando resultados...</p>';
+                    
+                    // Mostrar a seção de resultados
+                    document.getElementById('search-results-section').style.display = 'block';
+                    
+                    // Rolar para a seção de resultados
+                    document.getElementById('search-results-section').scrollIntoView({ behavior: 'smooth' });
+                    
+                    const products = await window.supabaseProducts.getProductsBySearchId(searchId);
+                    
+                    if (!products || products.length === 0) {
+                        resultsContainer.innerHTML = '<p class="no-results">Nenhum produto encontrado para esta pesquisa.</p>';
+                        return;
+                    }
+                    
+                    // Limpar o container
+                    resultsContainer.innerHTML = '';
+                    
+                    // Criar cards para cada produto
+                    products.forEach(product => {
+                        const card = document.createElement('div');
+                        card.className = `product-card ${product.is_outlier ? 'outlier' : ''}`;
+                        
+                        const formattedPrice = new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                        }).format(product.price);
+                        
+                        card.innerHTML = `
+                            <div class="product-image">
+                                <img src="${product.image_url}" alt="${product.title}" onerror="this.src='/assets/no-image.png'">
+                            </div>
+                            <div class="product-info">
+                                <h3>${product.title}</h3>
+                                <p class="product-price">${formattedPrice}</p>
+                                <p class="product-store">${product.store || 'Loja não especificada'}</p>
+                                <p class="product-source">Fonte: ${product.source === 'mercadolivre' ? 'Mercado Livre' : 'Google Shopping'}</p>
+                                <a href="${product.link}" target="_blank" class="view-product-btn">Ver Produto</a>
+                            </div>
+                        `;
+                        
+                        resultsContainer.appendChild(card);
+                    });
+                    
+                } catch (error) {
+                    console.error('Erro ao carregar resultados:', error);
+                    const resultsContainer = document.getElementById('results-container');
+                    resultsContainer.innerHTML = `<p class="error">Erro ao carregar resultados: ${error.message}</p>`;
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaPreço - Busca de Produtos</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+    <meta name="description" content="MetaPreço - Buscador de preços com análise estatística para encontrar os melhores preços e ofertas online.">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>MetaPreço</h1>
+            <nav class="nav-links">
+                <a href="index.html" class="nav-link"><i class="fas fa-home"></i> Início</a>
+                <a href="busca.html" class="nav-link active"><i class="fas fa-search"></i> Nova Pesquisa</a>
+                <a href="historico.html" class="nav-link"><i class="fas fa-history"></i> Histórico</a>
+                <a href="login.html" class="nav-link auth-link login-link"><i class="fas fa-sign-in-alt"></i> Login</a>
+                <a href="#" class="nav-link auth-link logout-link" style="display: none;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <span class="nav-link auth-link user-info" style="display: none;"><i class="fas fa-user"></i> <span class="username">Usuário</span></span>
+            </nav>
+        </header>
+
+        <div class="alert alert-info" id="server-info">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>Aviso:</strong> Este aplicativo utiliza um servidor gratuito do Render que pode hibernar após períodos de inatividade.
+                <p class="small">Se a primeira busca demorar, aguarde alguns minutos para o servidor iniciar. As buscas subsequentes serão mais rápidas.</p>
+            </div>
+            <button class="close-alert" onclick="document.getElementById('server-info').style.display='none'">×</button>
+        </div>
+
+        <div id="auth-required-message" style="display: none;" class="alert alert-warning">
+            <i class="fas fa-lock"></i>
+            <div>
+                <strong>Acesso Restrito:</strong> Você precisa fazer login para utilizar esta funcionalidade.
+                <p class="small">Por favor, <a href="login.html">faça login</a> ou <a href="login.html?register=true">crie uma conta</a> para continuar.</p>
+            </div>
+        </div>
+        
+        <div id="search-content" style="display: none;">
+            <div class="search-box">
+                <div class="fonte-selecao">
+                    <label class="fonte-checkbox">
+                        <input type="checkbox" id="fonte-ml" checked>
+                        <span>Mercado Livre</span>
+                    </label>
+                    <label class="fonte-checkbox">
+                        <input type="checkbox" id="fonte-gs" checked>
+                        <span>Google Shopping</span>
+                    </label>
+                </div>
+                <div class="lote-input">
+                    <textarea id="lista-produtos" placeholder="Digite um ou mais produtos para buscar&#10;Digite um produto por linha&#10;Exemplo:&#10;iPhone 13&#10;Galaxy S21&#10;iPad Pro"></textarea>
+                    <div class="botoes-busca">
+                        <button id="btn-buscar">Buscar Produtos</button>
+                        <button id="btn-limpar-cache" class="btn-secundario">Limpar Cache</button>
+                    </div>
+                    <div class="cache-info">
+                        <span id="cache-status"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="resultados-lote" class="resultados-lote">
+                <h2>Resultados da Busca</h2>
+                <div class="acoes-lote">
+                    <div class="ordenacao">
+                        <span>Ordenar por:</span>
+                        <button class="btn-ordenar" data-ordem="menor">Menor Preço Médio</button>
+                        <button class="btn-ordenar" data-ordem="maior">Maior Preço Médio</button>
+                    </div>
+                    <div class="acoes-direita">
+                        <button class="btn-remover-outliers-lote" onclick="if(window.UI) UI.removerOutliersLote()">
+                            ⚠️ Remover Todos Outliers
+                        </button>
+                        <button class="btn-exportar">
+                            📊 Exportar para Excel
+                        </button>
+                    </div>
+                </div>
+                <div id="progresso-container" style="display: none;">
+                    <div class="progresso-info">
+                        <span id="progresso-texto">Buscando produtos...</span>
+                        <span id="progresso-porcentagem">0%</span>
+                    </div>
+                    <div class="barra-progresso">
+                        <div id="barra-progresso-preenchimento"></div>
+                    </div>
+                </div>
+                <div class="tabela-container">
+                    <table id="tabela-resultados">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>Qtd. Encontrada</th>
+                                <th>Preço Médio</th>
+                                <th>Preço Mediano</th>
+                                <th>Preço Mais Comum</th>
+                                <th>Menor Preço</th>
+                                <th>Maior Preço</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-corpo">
+                            <!-- Resultados serão inseridos aqui via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="sem-resultados" style="display: none;">
+                    <p>Nenhum resultado encontrado. Tente uma nova busca.</p>
+                </div>
+            </div>
+
+            <div id="modal-detalhes" class="modal">
+                <div class="modal-content">
+                    <span class="fechar-modal">&times;</span>
+                    <h2 id="modal-titulo">Detalhes do Produto</h2>
+                    
+                    <div class="estatisticas-container">
+                        <div class="estatisticas-grid">
+                            <div class="estatistica-card">
+                                <div class="estatistica-valor" id="preco-medio">R$ 0,00</div>
+                                <div class="estatistica-label">Preço Médio</div>
+                            </div>
+                            <div class="estatistica-card">
+                                <div class="estatistica-valor" id="preco-mediano">R$ 0,00</div>
+                                <div class="estatistica-label">Preço Mediano</div>
+                            </div>
+                            <div class="estatistica-card">
+                                <div class="estatistica-valor" id="preco-moda">R$ 0,00</div>
+                                <div class="estatistica-label">Preço Mais Comum</div>
+                            </div>
+                            <div class="estatistica-card">
+                                <div class="estatistica-valor" id="menor-preco">R$ 0,00</div>
+                                <div class="estatistica-label">Menor Preço</div>
+                            </div>
+                            <div class="estatistica-card">
+                                <div class="estatistica-valor" id="maior-preco">R$ 0,00</div>
+                                <div class="estatistica-label">Maior Preço</div>
+                            </div>
+                            <div class="estatistica-card">
+                                <div class="estatistica-valor" id="qtd-outliers">0</div>
+                                <div class="estatistica-label">Outliers</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grafico-container">
+                        <canvas id="grafico-precos"></canvas>
+                    </div>
+                    
+                    <div class="acoes-modal">
+                        <div class="ordenacao">
+                            <button class="btn-ordenar" data-ordem="menor">Menor Preço</button>
+                            <button class="btn-ordenar" data-ordem="maior">Maior Preço</button>
+                        </div>
+                        <div class="view-toggle">
+                            <button class="active" data-view="grid" title="Visualização em Grade">📱</button>
+                            <button data-view="list" title="Visualização em Lista">📄</button>
+                        </div>
+                        <button class="btn-remover-outliers" onclick="if(window.UI) UI.removerOutliers()">
+                            <i>⚠️</i> Remover Outliers
+                        </button>
+                    </div>
+
+                    <div id="lista-produtos-modal" class="produtos-container grid-view"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts externos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    
+    <!-- Scripts da aplicação -->
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/statistics.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+
+    <!-- Supabase Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-client.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchTerm = urlParams.get('q');
+            
+            if (!searchTerm) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Atualizar o título da página com o termo de pesquisa
+            document.getElementById('search-term').textContent = searchTerm;
+            document.getElementById('search-input').value = searchTerm;
+            
+            // Realizar a pesquisa
+            performSearch(searchTerm);
+            
+            // Função para realizar a pesquisa
+            async function performSearch(term) {
+                const resultsContainer = document.getElementById('results-container');
+                resultsContainer.innerHTML = '<p class="loading">Buscando produtos...</p>';
+                
+                try {
+                    // Aqui você precisaria implementar a lógica para buscar produtos
+                    // Como isso depende de APIs externas (Mercado Livre, Google Shopping),
+                    // vamos simular o salvamento dos resultados no Supabase
+                    
+                    // Simulação: produtos encontrados
+                    const mockProducts = [
+                        {
+                            title: 'Produto de exemplo 1',
+                            price: 99.90,
+                            link: 'https://example.com/product1',
+                            imageUrl: '/assets/no-image.png',
+                            source: 'mercadolivre',
+                            store: 'Loja Exemplo'
+                        },
+                        {
+                            title: 'Produto de exemplo 2',
+                            price: 129.90,
+                            link: 'https://example.com/product2',
+                            imageUrl: '/assets/no-image.png',
+                            source: 'googleshopping',
+                            store: 'Loja Exemplo 2'
+                        }
+                    ];
+                    
+                    // Salvar histórico de pesquisa
+                    const searchHistory = await window.supabaseProducts.saveSearchHistory(
+                        term,
+                        mockProducts.length,
+                        { mercadoLivre: true, googleShopping: true }
+                    );
+                    
+                    // Salvar produtos
+                    await window.supabaseProducts.saveProducts(mockProducts, searchHistory.id);
+                    
+                    // Exibir resultados
+                    displayResults(mockProducts);
+                    
+                } catch (error) {
+                    console.error('Erro ao realizar pesquisa:', error);
+                    resultsContainer.innerHTML = `<p class="error">Erro ao buscar produtos: ${error.message}</p>`;
+                }
+            }
+            
+            // Função para exibir os resultados
+            function displayResults(products) {
+                const resultsContainer = document.getElementById('results-container');
+                
+                if (!products || products.length === 0) {
+                    resultsContainer.innerHTML = '<p class="no-results">Nenhum produto encontrado.</p>';
+                    return;
+                }
+                
+                // Limpar o container
+                resultsContainer.innerHTML = '';
+                
+                // Criar cards para cada produto
+                products.forEach(product => {
+                    const card = document.createElement('div');
+                    card.className = 'product-card';
+                    
+                    const formattedPrice = new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                    }).format(product.price);
+                    
+                    card.innerHTML = `
+                        <div class="product-image">
+                            <img src="${product.imageUrl}" alt="${product.title}" onerror="this.src='/assets/no-image.png'">
+                        </div>
+                        <div class="product-info">
+                            <h3>${product.title}</h3>
+                            <p class="product-price">${formattedPrice}</p>
+                            <p class="product-store">${product.store || 'Loja não especificada'}</p>
+                            <p class="product-source">Fonte: ${product.source === 'mercadolivre' ? 'Mercado Livre' : 'Google Shopping'}</p>
+                            <a href="${product.link}" target="_blank" class="view-product-btn">Ver Produto</a>
+                        </div>
+                    `;
+                    
+                    resultsContainer.appendChild(card);
+                });
+            }
+            
+            // Event listener para o formulário de pesquisa
+            document.getElementById('search-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const newSearchTerm = document.getElementById('search-input').value.trim();
+                
+                if (newSearchTerm) {
+                    window.location.href = `busca.html?q=${encodeURIComponent(newSearchTerm)}`;
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

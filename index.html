@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaPreço - Buscador de Preços com Análise Estatística</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+    <meta name="description" content="MetaPreço - Buscador de preços com análise estatística para encontrar os melhores preços e ofertas online.">
+    <style>
+        .hero-section {
+            text-align: center;
+            padding: 3rem 1rem;
+            background: linear-gradient(135deg, #1a5fb4, #0b3a78);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .hero-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .hero-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 1;
+            line-height: 1.6;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .cta-button {
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            font-weight: bold;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 150px;
+        }
+        
+        .cta-primary {
+            background-color: white;
+            color: #1a5fb4;
+            border: 2px solid white;
+        }
+        
+        .cta-primary:hover {
+            background-color: rgba(255, 255, 255, 0.9);
+            transform: translateY(-3px);
+        }
+        
+        .cta-secondary {
+            background-color: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .cta-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+        
+        .features-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .feature-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            color: #1a5fb4;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-title {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .feature-description {
+            color: #555;
+            line-height: 1.6;
+        }
+        
+        .testimonial-section {
+            background-color: #f5f7fa;
+            padding: 2rem;
+            border-radius: 10px;
+            margin: 3rem 0;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .testimonial-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+            color: #333;
+        }
+        
+        .testimonial-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1rem;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .testimonial-text {
+            font-style: italic;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+            color: #444;
+        }
+        
+        .testimonial-author {
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            color: #333;
+        }
+        
+        .testimonial-author i {
+            margin-right: 0.5rem;
+            color: #1a5fb4;
+        }
+        
+        .how-it-works {
+            margin: 3rem 0;
+        }
+        
+        .how-it-works-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+            color: #333;
+        }
+        
+        .steps {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        
+        .step {
+            flex: 1;
+            min-width: 250px;
+            text-align: center;
+            padding: 1rem;
+            position: relative;
+        }
+        
+        .step-number {
+            background-color: #1a5fb4;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .step-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        .step-description {
+            color: #555;
+            line-height: 1.5;
+        }
+        
+        .footer {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+        }
+        
+        @media (max-width: 768px) {
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .features-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .steps {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>MetaPreço</h1>
+            <nav class="nav-links">
+                <a href="busca.html" class="nav-link"><i class="fas fa-search"></i> Nova Pesquisa</a>
+                <a href="historico.html" class="nav-link"><i class="fas fa-history"></i> Histórico</a>
+                <a href="login.html" class="nav-link auth-link login-link"><i class="fas fa-sign-in-alt"></i> Login</a>
+                <a href="#" class="nav-link auth-link logout-link" style="display: none;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <span class="nav-link auth-link user-info" style="display: none;"><i class="fas fa-user"></i> <span class="username">Usuário</span></span>
+            </nav>
+        </header>
+
+        <div id="server-alert" class="alert">
+            <span>
+                <i class="fas fa-info-circle"></i> O servidor pode estar hibernando devido à inatividade. 
+                A primeira pesquisa pode levar até 30 segundos para carregar.
+            </span>
+            <button id="close-alert" class="close-button">&times;</button>
+        </div>
+
+        <main>
+            <section class="hero-section">
+                <h2 class="hero-title">Encontre os Melhores Preços Online</h2>
+                <p class="hero-subtitle">MetaPreço é uma ferramenta poderosa que busca e analisa preços de produtos em diversas lojas online, ajudando você a economizar tempo e dinheiro.</p>
+                
+                <div class="cta-buttons">
+                    <a href="login.html?register=true" class="cta-button cta-primary">
+                        <i class="fas fa-user-plus"></i> Criar Conta
+                    </a>
+                    <a href="login.html" class="cta-button cta-secondary">
+                        <i class="fas fa-sign-in-alt"></i> Entrar
+                    </a>
+                </div>
+            </section>
+
+            <section class="features-section">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3 class="feature-title">Busca Inteligente</h3>
+                    <p class="feature-description">Pesquise produtos em múltiplas fontes como Mercado Livre e Google Shopping simultaneamente.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h3 class="feature-title">Análise Estatística</h3>
+                    <p class="feature-description">Obtenha médias, medianas e identifique outliers para tomar decisões mais informadas.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-file-export"></i>
+                    </div>
+                    <h3 class="feature-title">Exportação de Dados</h3>
+                    <p class="feature-description">Exporte seus resultados para Excel e compartilhe com facilidade.</p>
+                </div>
+            </section>
+
+            <section class="how-it-works">
+                <h2 class="how-it-works-title">Como Funciona</h2>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3 class="step-title">Crie sua conta</h3>
+                        <p class="step-description">Registre-se gratuitamente para acessar todas as funcionalidades.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3 class="step-title">Pesquise produtos</h3>
+                        <p class="step-description">Digite o nome do produto ou cole uma lista de produtos para buscar.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3 class="step-title">Analise os resultados</h3>
+                        <p class="step-description">Veja estatísticas, gráficos e encontre os melhores preços.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <h3 class="step-title">Economize</h3>
+                        <p class="step-description">Tome decisões de compra inteligentes baseadas em dados reais.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="testimonial-section">
+                <h2 class="testimonial-title">O Que Nossos Usuários Dizem</h2>
+                
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"O MetaPreço revolucionou a forma como eu faço compras online. Economizei mais de R$ 500 na compra de um notebook!"</p>
+                    <div class="testimonial-author">
+                        <i class="fas fa-user-circle"></i> Carlos Silva
+                    </div>
+                </div>
+                
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"A análise estatística me ajuda a identificar quando um preço está realmente em promoção ou quando é apenas marketing."</p>
+                    <div class="testimonial-author">
+                        <i class="fas fa-user-circle"></i> Ana Oliveira
+                    </div>
+                </div>
+            </section>
+
+            <section class="cta-section">
+                <div class="hero-section" style="margin-top: 2rem;">
+                    <h2 class="hero-title">Comece a Economizar Hoje</h2>
+                    <p class="hero-subtitle">Junte-se a milhares de usuários que já estão economizando tempo e dinheiro com o MetaPreço.</p>
+                    
+                    <div class="cta-buttons">
+                        <a href="login.html?register=true" class="cta-button cta-primary">
+                            <i class="fas fa-user-plus"></i> Criar Conta Grátis
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2023 MetaPreço - Todos os direitos reservados</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    
+    <!-- Supabase Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-client.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fechar alerta
+            const closeAlert = document.getElementById('close-alert');
+            const serverAlert = document.getElementById('server-alert');
+            
+            if (closeAlert && serverAlert) {
+                closeAlert.addEventListener('click', function() {
+                    serverAlert.style.display = 'none';
+                });
+            }
+            
+            // Verificar autenticação
+            if (window.authUtils && typeof window.authUtils.isAuthenticated === 'function') {
+                const isAuthenticated = window.authUtils.isAuthenticated();
+                
+                if (isAuthenticated) {
+                    // Redirecionar usuários logados para a página de busca
+                    window.location.href = 'busca.html';
+                }
+                
+                // Configurar o botão de logout
+                const logoutLink = document.querySelector('.logout-link');
+                if (logoutLink) {
+                    logoutLink.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        window.authUtils.clearToken();
+                        window.location.href = 'index.html';
+                    });
+                }
+                
+                // Atualizar a exibição dos links de autenticação
+                const loginLink = document.querySelector('.login-link');
+                const userInfo = document.querySelector('.user-info');
+                const usernameSpan = document.querySelector('.username');
+                
+                if (isAuthenticated) {
+                    if (loginLink) loginLink.style.display = 'none';
+                    if (logoutLink) logoutLink.style.display = 'inline-block';
+                    if (userInfo) {
+                        userInfo.style.display = 'inline-block';
+                        const user = window.authUtils.getCurrentUser();
+                        if (user && usernameSpan) {
+                            usernameSpan.textContent = user.name;
+                        }
+                    }
+                } else {
+                    if (loginLink) loginLink.style.display = 'inline-block';
+                    if (logoutLink) logoutLink.style.display = 'none';
+                    if (userInfo) userInfo.style.display = 'none';
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,6 +1,7 @@
 // Configuração da API
-const API_URL = 'https://metapreco-backend.onrender.com';
-const AUTH_ENDPOINT = `${API_URL}/api/auth`;
+// Agora usamos o Supabase em vez do backend no Render
+// const API_URL = 'https://metapreco-backend.onrender.com';
+// const AUTH_ENDPOINT = `${API_URL}/api/auth`;
 
 // Referências aos elementos do DOM
 // Usando querySelector para evitar erros quando os elementos não existem
@@ -63,18 +64,18 @@ function hideServerStatus() {
     }
 }
 
-// Salvar token em localStorage
+// Salvar token e informações do usuário no localStorage
 function saveToken(token, user) {
     localStorage.setItem('authToken', token);
     localStorage.setItem('user', JSON.stringify(user));
 }
 
-// Obter o token do localStorage
+// Obter token do localStorage
 function getToken() {
     return localStorage.getItem('authToken');
 }
 
-// Limpar token do localStorage
+// Limpar token e informações do usuário do localStorage
 function clearToken() {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
@@ -85,238 +86,244 @@ function isAuthenticated() {
     return !!getToken();
 }
 
-// Obter o usuário atual
+// Obter informações do usuário atual
 function getCurrentUser() {
-    const userString = localStorage.getItem('user');
-    return userString ? JSON.parse(userString) : null;
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
 }
 
-// Fazer requisição para a API
+// Função para fazer requisições à API usando Supabase
 async function apiRequest(endpoint, method = 'GET', data = null) {
-    const url = `${AUTH_ENDPOINT}${endpoint}`;
-    
-    // Mostrar indicador de carregamento se for a primeira requisição
-    if (!isLoading) {
-        isLoading = true;
-        showServerStatus();
-    }
-    
-    const headers = {
-        'Content-Type': 'application/json'
-    };
-    
-    // Adicionar token de autenticação se disponível
-    const token = getToken();
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const options = {
-        method,
-        headers,
-        credentials: 'include'
-    };
-    
-    if (data) {
-        options.body = JSON.stringify(data);
-    }
-    
     try {
-        console.log(`Fazendo requisição para: ${url}`);
-        const response = await fetch(url, options);
-        
-        // Esconder indicador de carregamento
-        isLoading = false;
+        // Verificar se o Supabase está disponível
+        if (!window.supabaseAuth) {
+            throw new Error('Supabase não está disponível. Verifique se o script foi carregado corretamente.');
+        }
+
+        let result;
+
+        // Mostrar status do servidor para requisições que podem demorar
+        if (method !== 'GET') {
+            showServerStatus();
+        }
+
+        // Executar a requisição com base no endpoint e método
+        switch (endpoint) {
+            case 'register':
+                console.log('Registrando usuário com Supabase...');
+                result = await window.supabaseAuth.signUp(
+                    data.name,
+                    data.email,
+                    data.password
+                );
+                break;
+            
+            case 'login':
+                console.log('Fazendo login com Supabase...');
+                const loginResult = await window.supabaseAuth.signIn(
+                    data.email,
+                    data.password
+                );
+                
+                // Formatar o resultado para manter compatibilidade com o código existente
+                if (loginResult && loginResult.user) {
+                    result = {
+                        token: loginResult.session?.access_token || '',
+                        user: {
+                            id: loginResult.user.id,
+                            name: loginResult.user.user_metadata?.name || data.email.split('@')[0],
+                            email: loginResult.user.email
+                        }
+                    };
+                } else {
+                    result = loginResult;
+                }
+                break;
+            
+            case 'logout':
+                console.log('Fazendo logout com Supabase...');
+                await window.supabaseAuth.signOut();
+                result = { success: true };
+                break;
+            
+            default:
+                throw new Error(`Endpoint não suportado: ${endpoint}`);
+        }
+
+        // Esconder status do servidor
         hideServerStatus();
         
-        const responseData = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(responseData.message || 'Ocorreu um erro');
-        }
-        
-        return responseData;
+        return result;
     } catch (error) {
-        // Esconder indicador de carregamento
-        isLoading = false;
+        // Esconder status do servidor em caso de erro
         hideServerStatus();
         
         console.error('Erro na requisição:', error);
-        
-        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            throw new Error('Não foi possível conectar ao servidor. Verifique sua conexão ou tente novamente mais tarde.');
-        }
-        
         throw error;
     }
 }
 
-// Verificar autenticação ao carregar a página
-document.addEventListener('DOMContentLoaded', () => {
-    // Configurar eventos de login e registro apenas se estivermos na página de login
-    if (window.location.pathname.includes('login.html')) {
-        setupLoginEvents();
-        setupRegisterEvents();
-    }
-    
-    // Configurar evento de logout em todas as páginas
-    const logoutLink = document.querySelector('.logout-link');
-    if (logoutLink) {
-        logoutLink.addEventListener('click', function(e) {
+// Configurar eventos para o formulário de login
+function setupLoginEvents() {
+    if (loginForm) {
+        loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            clearToken();
-            window.location.href = 'index.html';
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showAlert(alertMessage, 'Por favor, preencha todos os campos.', 'error');
+                return;
+            }
+            
+            try {
+                const result = await apiRequest('login', 'POST', { email, password });
+                
+                if (result && result.token) {
+                    saveToken(result.token, result.user);
+                    showAlert(alertMessage, 'Login realizado com sucesso! Redirecionando...', 'success');
+                    
+                    // Redirecionar após login bem-sucedido
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                } else {
+                    showAlert(alertMessage, 'Erro ao fazer login. Verifique suas credenciais.', 'error');
+                }
+            } catch (error) {
+                showAlert(alertMessage, `Erro ao fazer login: ${error.message}`, 'error');
+            }
         });
     }
     
-    // Atualizar a exibição dos links de autenticação em todas as páginas
-    updateAuthLinks();
-    
-    if (isAuthenticated()) {
-        // Usuário já está logado, verificar se estamos na página de login
-        const user = getCurrentUser();
-        if (user && window.location.pathname.includes('login.html')) {
-            // Estamos na página de login, mas o usuário já está autenticado
-            if (alertMessage) {
-                showAlert(alertMessage, `Você já está logado como ${user.name}. Redirecionando...`, 'success');
-                
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1500);
-            } else {
-                // Se não encontrarmos o elemento de alerta, redirecionar imediatamente
-                window.location.href = 'index.html';
-            }
-        }
-    }
-});
-
-// Configurar eventos para o formulário de login
-function setupLoginEvents() {
-    if (!loginForm) return;
-    
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const email = document.getElementById('loginEmail');
-        const password = document.getElementById('loginPassword');
-        
-        if (!email || !password) return;
-        
-        try {
-            const response = await apiRequest('/login', 'POST', { 
-                email: email.value, 
-                password: password.value 
-            });
-            
-            // Salvar token e dados do usuário
-            saveToken(response.token, response.user);
-            
-            // Exibir mensagem de sucesso
-            showAlert(alertMessage, 'Login realizado com sucesso! Redirecionando...', 'success');
-            
-            // Redirecionar para a página inicial após um breve delay
-            setTimeout(() => {
-                window.location.href = 'busca.html';
-            }, 1500);
-        } catch (error) {
-            showAlert(alertMessage, error.message, 'error');
-        }
-    });
-    
     // Alternar para o formulário de registro
-    if (toggleRegister) {
-        toggleRegister.addEventListener('click', (e) => {
+    if (toggleRegister && registerContainer && loginContainer) {
+        toggleRegister.addEventListener('click', function(e) {
             e.preventDefault();
-            if (loginContainer) loginContainer.style.display = 'none';
-            if (registerContainer) registerContainer.style.display = 'block';
+            loginContainer.style.display = 'none';
+            registerContainer.style.display = 'block';
         });
     }
 }
 
 // Configurar eventos para o formulário de registro
 function setupRegisterEvents() {
-    if (!registerForm) return;
-    
-    registerForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const name = document.getElementById('registerName');
-        const email = document.getElementById('registerEmail');
-        const password = document.getElementById('registerPassword');
-        const confirmPassword = document.getElementById('confirmPassword');
-        
-        if (!name || !email || !password || !confirmPassword) return;
-        
-        // Validar se as senhas são iguais
-        if (password.value !== confirmPassword.value) {
-            return showAlert(registerAlertMessage, 'As senhas não coincidem', 'error');
-        }
-        
-        try {
-            const response = await apiRequest('/register', 'POST', { 
-                name: name.value, 
-                email: email.value, 
-                password: password.value 
-            });
+    if (registerForm) {
+        registerForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            // Salvar token e dados do usuário
-            saveToken(response.token, response.user);
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
             
-            // Exibir mensagem de sucesso
-            showAlert(registerAlertMessage, 'Cadastro realizado com sucesso! Redirecionando...', 'success');
+            if (!name || !email || !password || !confirmPassword) {
+                showAlert(registerAlertMessage, 'Por favor, preencha todos os campos.', 'error');
+                return;
+            }
             
-            // Redirecionar para a página inicial após um breve delay
-            setTimeout(() => {
-                window.location.href = 'busca.html';
-            }, 1500);
-        } catch (error) {
-            showAlert(registerAlertMessage, error.message, 'error');
-        }
-    });
+            if (password !== confirmPassword) {
+                showAlert(registerAlertMessage, 'As senhas não coincidem.', 'error');
+                return;
+            }
+            
+            try {
+                const result = await apiRequest('register', 'POST', { name, email, password });
+                
+                if (result && result.user) {
+                    showAlert(registerAlertMessage, 'Registro realizado com sucesso! Você já pode fazer login.', 'success');
+                    
+                    // Limpar formulário
+                    registerForm.reset();
+                    
+                    // Voltar para o formulário de login após alguns segundos
+                    setTimeout(() => {
+                        if (loginContainer && registerContainer) {
+                            registerContainer.style.display = 'none';
+                            loginContainer.style.display = 'block';
+                        }
+                    }, 2000);
+                } else {
+                    showAlert(registerAlertMessage, 'Erro ao registrar. Verifique os dados informados.', 'error');
+                }
+            } catch (error) {
+                showAlert(registerAlertMessage, `Erro ao registrar: ${error.message}`, 'error');
+            }
+        });
+    }
     
     // Alternar para o formulário de login
-    if (toggleLogin) {
-        toggleLogin.addEventListener('click', (e) => {
+    if (toggleLogin && loginContainer && registerContainer) {
+        toggleLogin.addEventListener('click', function(e) {
             e.preventDefault();
-            if (registerContainer) registerContainer.style.display = 'none';
-            if (loginContainer) loginContainer.style.display = 'block';
+            registerContainer.style.display = 'none';
+            loginContainer.style.display = 'block';
         });
     }
 }
 
-// Atualizar a exibição dos links de autenticação
+// Atualizar links de autenticação na barra de navegação
 function updateAuthLinks() {
     const loginLink = document.querySelector('.login-link');
     const logoutLink = document.querySelector('.logout-link');
     const userInfo = document.querySelector('.user-info');
-    const usernameSpan = document.querySelector('.username');
+    const username = document.querySelector('.username');
     
-    const isUserAuthenticated = isAuthenticated();
-    
-    if (isUserAuthenticated) {
+    if (isAuthenticated()) {
+        // Usuário está autenticado
         if (loginLink) loginLink.style.display = 'none';
-        if (logoutLink) logoutLink.style.display = 'inline-block';
-        if (userInfo) {
+        if (logoutLink) {
+            logoutLink.style.display = 'inline-block';
+            logoutLink.addEventListener('click', async function(e) {
+                e.preventDefault();
+                try {
+                    await apiRequest('logout', 'POST');
+                    clearToken();
+                    window.location.href = 'index.html';
+                } catch (error) {
+                    console.error('Erro ao fazer logout:', error);
+                    // Forçar logout mesmo em caso de erro
+                    clearToken();
+                    window.location.href = 'index.html';
+                }
+            });
+        }
+        
+        if (userInfo && username) {
             userInfo.style.display = 'inline-block';
             const user = getCurrentUser();
-            if (user && usernameSpan) {
-                usernameSpan.textContent = user.name;
+            if (user) {
+                username.textContent = user.name;
             }
         }
     } else {
+        // Usuário não está autenticado
         if (loginLink) loginLink.style.display = 'inline-block';
         if (logoutLink) logoutLink.style.display = 'none';
         if (userInfo) userInfo.style.display = 'none';
     }
 }
 
-// Exportar funções para uso em outros arquivos
+// Inicializar quando o documento estiver pronto
+document.addEventListener('DOMContentLoaded', function() {
+    setupLoginEvents();
+    setupRegisterEvents();
+    updateAuthLinks();
+    
+    // Verificar parâmetro register na URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const showRegister = urlParams.get('register');
+    
+    if (showRegister === 'true' && loginContainer && registerContainer) {
+        loginContainer.style.display = 'none';
+        registerContainer.style.display = 'block';
+    }
+});
+
+// Exportar funções para uso global
 window.authUtils = {
     isAuthenticated,
     getCurrentUser,
-    getToken,
-    clearToken,
-    apiRequest,
-    updateAuthLinks
+    clearToken
 }; 
